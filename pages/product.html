@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>product-controller</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/5.10.2/css/all.css">
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+	<script type="text/javascript" src="../bootstrap/js/bootstrap.js"></script>
+</head>
+<body>
+	
+</body>
+</html>
+// 初始化栏目
+		function initCategory(){
+			var url = baseURL + "/category/findAll";
+			$.get(url,function(result){
+				if(result.status === 200){
+					console.log(this);
+					// 清空下拉菜单
+					$("#category_form select[name=parentId]").empty();
+					// 将栏目信息追加到下拉菜单中
+					result.data.forEach(function(item){
+						console.log(item);
+						$("#category_form select[name=parentId]").append(`
+								<option value="`+item.id+`">`+item.name+`</option>
+							`);
+					});
+				}
+			});
+		}

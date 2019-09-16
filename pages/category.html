@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>category-controller</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="../bootstrap/css/bootstrap.css">
+	<link rel="stylesheet" href="https://cdn.bootcss.com/font-awesome/5.10.2/css/all.css">
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+	<script type="text/javascript" src="../bootstrap/js/bootstrap.js"></script>
+
+	<script>
+		// 提前申明的代码
+		var baseURL = "http://134.175.100.63:6677";
+		function reloadData(){
+			var url = baseURL+"/category/findAll"
+			$.get(url,function(result){
+				if(result.status === 200){
+					$("#category_table tbody").empty();
+					result.data.forEach(function(item){
+						$("#category_table tbody").append($(`
+				<tr>
+					<td><input type="checkbox" value="`+item.id+`"></td>
+					<td>`+item.id+`</td>
+					<td>`+item.name+`</td>
+					<td>`+item.num+`</td>
+					<td>`+item.parentId+`</td>
+					<td>
+						<button class="btn-danger" name="btn_del_category">删除</button>
+									&nbsp;
+						<button id="btn_upd_category" class="btn-success" name="btn_upd_category">修改</button>
+					</td>
+				</tr>
+							`));
+					});
+				}
+			});
+		}
+	
+
+
+		// 初始化栏目
+		function initCategory(){
+			var url = baseURL + "/category/findAll";
+			$.get(url,function(result){
+				if(result.status === 200){
+					console.log(this);
+					// 清空下拉菜单
+					$("#category_form select[name=parentId]").empty();
+					// 将栏目信息追加到下拉菜单中
+					result.data.forEach(function(item){
+						console.log(item);
+						$("#category_form select[name=parentId]").append(`
+								<option value="`+item.id+`">`+item.name+`</option>
+							`);
+					});
+				}
+			});
+		}
+		// 关闭模态框
+		function closecategoryModal(){
+			$("#categoryModal").modal("hide");
+		}
+		// 提交表单
+		function submitcategoryModal(){
+			// 1. 获取参数
+			var id = $("input[name = id]").val();
+			var name = $("#category_form input[name=name]").val();
+			var num = $("#category_form input[name=num]").val();
+			var parentId = $("#category_form select[name=parentId]").val();
+			console.log(name,num,parentId);
+			// 2. ajax
+			var url = baseURL+"/category/saveOrUpdate"
+			if (id){
+				data = {
+					id:id,
+					name:name,
+					num:num,
+					parentId:parentId,
+			    }
+			}else{
+				data = {
+					name:name,
+					num:num,
+					parentId:parentId,
+				}
+			}
+			
+			$.post(url,data,function(result){
+				if(result.status === 200){
+					closecategoryModal();
+					reloadData();
+				} else {
+					alert(result.message);
+				}
+			});
+		}
+
+		// ======== 文档加载完毕后执行
+		$(function(){
+			// 1. 初始化数据
+			reloadData();
+			
+			// 2. 为添加按钮绑定事件
+			$("#btn_add_category").click(function(){
+				$("#categoryModal").modal("show");
+			});
+
+
+			// 为删除修改按钮绑定事件
+			$("#category_table > tbody").on("click","button",function(){
+				switch(this.name){
+					case "btn_del_category":
+						//0.获取当前行id
+						var id = $(this).parents("tr").find("input").val();
+						var url = baseURL+"/category/deleteById";
+						var data = "id="+id;
+						$.get(url,data,function(result){
+							reloadData();
+							alert(result.message);
+						});
+					break;
+					case "btn_upd_category":
+					    $("#categoryModal").modal("show");
+					    // var id = $(this).parents("tr").find("input").val();
+					    var id = event.target.parentNode.parentNode.children[1].innerText;
+						var name = event.target.parentNode.parentNode.children[2].innerText;
+						var num =event.target.parentNode.parentNode.children[3].innerText;
+						var parentId = event.target.parentNode.parentNode.children[4].innerText;
+						console.log(name,num,parentId);
+						document.querySelector("input[name=id]").value = id;
+						document.querySelector("input[name=name]").value = name;
+						document.querySelector("input[name=num]").value = num;
+						document.querySelector("input[name=parentId]").value = parentId;
+						// $("input[name=id]").val() = id;
+						// $("input[name=name]").val() = name;
+						// $("input[name=num]").val() = num;
+						// $("select[name=parentId]").val() = parentId;
+					
+				}
+			});
+
+			// 为批量删除按钮绑定事件
+
+			$("btn_dels_category").on("click","button",function(){
+				//0.获取当前行id
+				var ids = $("input[type=checkbox]:checkbox").map(function(item,index){return $(index).val()}).toArray();
+				
+				var url = baseURL+"/category/batchDelete";
+				var data = "";
+				for(var index in ids){
+					var id = ids[index];
+					if(index ==0){
+						data += "ids="+id;
+					}else{
+						data += "&ids="+id;
+					}
+				}
+
+				// 与后台进行交互
+				$.post(url,data,function(result){
+					if(reloadData.status === 200){
+						alert("删除成功");
+						reloadData();
+					}else{
+						alert("删除失败");
+					}
+				});
+			});
+
+
+
+
+			// 3. 监听模态框的关闭
+			$('#categoryModal').on('hidden.bs.modal', function (e) {
+				$(this).find("form")[0].reset();
+			})
+			// 4. 监听模态框的打开
+			$('#categorytModal').on('show.bs.modal', function (e) {
+				// 初始化表单中的栏目下拉菜单
+				initCategory();
+			})
+		});
+	</script>
+</head>
+<body>
+	<!-- 容器 -->
+	<div class="container-fluid">
+		<br>
+		<!-- 栏目管理头部 -->
+		<div id="top_category" class="row">
+			<!-- 按钮 -->
+			<div id="btns_category" class="btn-sm mb-3 col-8 text-left">
+				<button id="btn_add_category" class="btn btn-outline-primary mr-3">添加</button>
+				<button id="btn_dels_category" class="btn btn-outline-primary ">批量删除</button>
+			</div>
+			<!-- / 按钮 -->
+			<!-- 搜索 -->
+			<div id="search_category" class="col-4 ">
+				<input type="text" class="form-control" placeholder="请输入..." name="search">
+			</div>
+			<!-- /搜索 -->
+		</div>
+		<!-- 表格 -->
+		<table class="table" id="category_table">
+			<thead>
+				<tr>
+					<td>编号</td>
+					<td>id</td>
+					<td>名称</td>
+					<td>数量</td>
+					<td>类别</td>
+					<td>操作</td>
+				</tr>
+			</thead>
+			<tbody>
+				
+			</tbody>
+		</table>
+		<!-- / 表格 -->
+	</div>
+	<!-- / 容器 -->
+	
+	<!-- 模态框 -->
+	<div class="modal fade" id="categoryModal" tabindex="-1">
+	  <div class="modal-dialog modal-xl" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="exampleModalLabel">分类信息</h5>
+	        <button type="button" class="close" onclick="closecategoryModal()">
+	          <span>&times;</span>
+	        </button>
+	      </div>
+	      <div class="modal-body">
+	  <!-- 表单 -->
+			<form action="/register" id="category_form">
+			    <!-- 隐藏id -->
+			    <div>
+			    	<input type="hidden" name="id">
+			    </div>
+				<!-- 产品名称 -->
+				<div class="form-group row">
+					<label for="input_name" class="col-3 text-right">产品名称</label>
+					<div class="col-9" >
+						<input id="input_name" name="name" type="text" class="form-control">
+					</div>
+				</div>
+				<!-- / 产品名称 -->
+				
+				<!-- 数量 -->
+				<div class="form-group row">
+					<label for="input_num" class="col-3 text-right">产品数量</label>
+					<div class="col-9" >
+						<input id="input_num" name="num" type="text" class="form-control">
+					</div>
+				</div>
+				<!-- / 单价 -->
+				<!-- 所属类别 -->
+				<div class="form-group row">
+					<label for="input_parentId" class="col-3 text-right">所属类别</label>
+					<div class="col-9" >
+						<select name="parentId" id="input_parentId" class="form-control" style="width: 50%">
+							
+						</select>
+					</div>
+				</div>
+				<!-- / 所属类别 -->
+				
+			</form>
+			<!-- / 表单 -->     
+
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-secondary" onclick="closecategoryModal()">取消</button>
+	        <button type="button" class="btn btn-primary" onclick="submitcategoryModal()">确认</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+	<!-- / 模态框 -->
+
+
+</body>
+</html>
